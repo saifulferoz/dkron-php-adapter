@@ -11,58 +11,70 @@ class Job implements \JsonSerializable
     const CONCURRENCY_FORBID = 'forbid';
 
     /** @var string */
-    private $concurrency = self::CONCURRENCY_ALLOW;
+    private string $concurrency = self::CONCURRENCY_ALLOW;
 
     /** @var string[] */
-    private $dependentJobs = [];
+    private array $dependentJobs = [];
 
     /** @var bool */
-    private $disabled = false;
+    private bool $disabled = false;
 
     /** @var string */
-    private $executor = "";
+    private string $executor = "";
 
     /** @var array[string]string */
-    private $executorConfig = [];
+    private array $executorConfig = [];
 
     /** @var int */
-    private $errorCount = 0;
+    private int $errorCount = 0;
 
     /** @var string */
-    private $lastError = "";
+    private string $lastError = "";
 
     /** @var string */
-    private $lastSuccess = "";
+    private string $lastSuccess = "";
 
     /** @var string */
-    private $name = "";
+    private string $name = "";
 
     /** @var string */
-    private $owner = "";
+    private string $displayname = "";
 
     /** @var string */
-    private $ownerEmail = "";
+    private string $owner = "";
 
     /** @var string */
-    private $parentJob = "";
+    private string $ownerEmail = "";
+
+    /** @var string */
+    private string $parentJob = "";
 
     /** @var array[string]string */
-    private $processors = [];
+    private array $processors = [];
 
     /** @var int */
-    private $retries = 0;
+    private int $retries = 0;
 
     /** @var string */
-    private $schedule = "* * * * * *";
+    private string $schedule = "* * * * * *";
 
     /** @var int */
-    private $successCount = 0;
+    private int $successCount = 0;
 
     /** @var array[string]string */
-    private $tags = [];
+    private array $tags = [];
+
+    /** @var array[string]string */
+    private array $metadata = [];
 
     /** @var string */
-    private $timezone = "";
+    private string $timezone = "";
+
+    /** @var string */
+    private string $status = "";
+
+    /** @var string */
+    private string $next = "";
 
     /**
      * Job constructor.
@@ -119,6 +131,7 @@ class Job implements \JsonSerializable
     {
         return [
             'name' => $this->name,
+            'displayName' => $this->displayname,
             'schedule' => $this->schedule,
             'concurrency' => $this->concurrency,
             'dependent_jobs' => $this->dependentJobs,
@@ -131,7 +144,10 @@ class Job implements \JsonSerializable
             'processors' => (object)$this->processors,
             'retries' => $this->retries,
             'tags' => (object)$this->tags,
+            'metadata' => (object)$this->metadata,
             'timezone' => $this->timezone,
+            'next' => $this->next,
+            'status' => $this->status,
         ];
     }
 
@@ -286,6 +302,7 @@ class Job implements \JsonSerializable
     {
         return [
             'name' => $this->name,
+            'displayName' => $this->displayname,
             'schedule' => $this->schedule,
             'concurrency' => $this->concurrency,
             'dependent_jobs' => $this->dependentJobs,
@@ -302,7 +319,10 @@ class Job implements \JsonSerializable
             'retries' => $this->retries,
             'success_count' => $this->successCount,
             'tags' => (object)$this->tags,
+            'metadata' => (object)$this->metadata,
             'timezone' => $this->timezone,
+            'status' => $this->status,
+            'next' => $this->next,
         ];
     }
 
@@ -314,8 +334,10 @@ class Job implements \JsonSerializable
     public function setConcurrency(string $concurrency): self
     {
         if (!in_array($concurrency, [self::CONCURRENCY_ALLOW, self::CONCURRENCY_FORBID], true)) {
-            throw new InvalidArgumentException('Concurrency value is incorrect. Allowed values are '
-                . self::CONCURRENCY_ALLOW . ' or ' . self::CONCURRENCY_FORBID);
+            throw new InvalidArgumentException(
+                'Concurrency value is incorrect. Allowed values are '
+                .self::CONCURRENCY_ALLOW.' or '.self::CONCURRENCY_FORBID
+            );
         }
         $this->concurrency = $concurrency;
 
@@ -507,7 +529,77 @@ class Job implements \JsonSerializable
         if (!empty($data['tags'])) {
             $job->setTags($data['tags']);
         }
+        if (isset($data['displayName'])) {
+            $job->setDisplayname($data['displayName']);
+        }
+        if (isset($data['metadata'])) {
+            $job->setMetadata($data['metadata']);
+        }
 
         return $job;
+    }
+
+    /**
+     * @return string
+     */
+    public function getDisplayname(): string
+    {
+        return $this->displayname;
+    }
+
+    /**
+     * @param string $displayname
+     */
+    public function setDisplayname(string $displayname): void
+    {
+        $this->displayname = $displayname;
+    }
+
+    /**
+     * @return array
+     */
+    public function getMetadata(): array
+    {
+        return $this->metadata;
+    }
+
+    /**
+     * @param array $metadata
+     */
+    public function setMetadata(array $metadata): void
+    {
+        $this->metadata = $metadata;
+    }
+
+    /**
+     * @return string
+     */
+    public function getStatus(): string
+    {
+        return $this->status;
+    }
+
+    /**
+     * @param string $status
+     */
+    public function setStatus(string $status): void
+    {
+        $this->status = $status;
+    }
+
+    /**
+     * @return string
+     */
+    public function getNext(): string
+    {
+        return $this->next;
+    }
+
+    /**
+     * @param string $next
+     */
+    public function setNext(string $next): void
+    {
+        $this->next = $next;
     }
 }
