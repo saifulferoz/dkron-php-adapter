@@ -538,7 +538,10 @@ class Job implements \JsonSerializable
         if (isset($data['next'])) {
             $job->setNext($data['next']);
         }
-
+        if (isset($data['status'])) {
+            $job->setStatus($data['status']);
+        }
+        
         return $job;
     }
 
