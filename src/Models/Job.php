@@ -146,7 +146,6 @@ class Job implements \JsonSerializable
             'tags' => (object)$this->tags,
             'metadata' => (object)$this->metadata,
             'timezone' => $this->timezone,
-            'next' => $this->next,
             'status' => $this->status,
         ];
     }
@@ -529,8 +528,8 @@ class Job implements \JsonSerializable
         if (!empty($data['tags'])) {
             $job->setTags($data['tags']);
         }
-        if (isset($data['displayName'])) {
-            $job->setDisplayname($data['displayName']);
+        if (isset($data['displayname'])) {
+            $job->setDisplayname($data['displayname']);
         }
         if (isset($data['metadata'])) {
             $job->setMetadata($data['metadata']);
