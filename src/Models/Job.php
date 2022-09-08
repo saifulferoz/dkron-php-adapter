@@ -535,6 +535,9 @@ class Job implements \JsonSerializable
         if (isset($data['metadata'])) {
             $job->setMetadata($data['metadata']);
         }
+        if (isset($data['next'])) {
+            $job->setNext($data['next']);
+        }
 
         return $job;
     }
