@@ -131,7 +131,7 @@ class Job implements \JsonSerializable
     {
         return [
             'name' => $this->name,
-            'displayName' => $this->displayname,
+            'displayname' => $this->displayname,
             'schedule' => $this->schedule,
             'concurrency' => $this->concurrency,
             'dependent_jobs' => $this->dependentJobs,
