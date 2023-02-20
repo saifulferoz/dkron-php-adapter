@@ -1,12 +1,12 @@
 {
-  "name": "gromo/dkron-php-adapter",
+  "name": "saifulferoz/dkron-php-adapter",
   "description": "Dkron PHP Adapter",
   "license": "MIT",
   "authors": [
     {
-      "name": "Yuriy Khabarov",
-      "email": "yuriy.khabarov@jumia.com",
-      "homepage": "https://github.com/gromo/dkron-php-adapter"
+      "name": "Saiful Islam Feroz",
+      "email": "saif012@gmail.com",
+      "homepage": "https://github.com/saifulferoz/dkron-php-adapter"
     }
   ],
   "require": {
