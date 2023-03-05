@@ -5,13 +5,14 @@
 
 
 # Dkron PHP Adapter
-Inspired by gromo/dkron-php-adapter.Update api field and symfony and php version.
+
+[comment]: <> (Inspired by gromo/dkron-php-adapter.Update api field and symfony and php version.)
 Adapter to communicate with [Dkron](https://dkron.io).
 
 Please read [Dkron API](https://dkron.io/usage/api/) for usage details
 
 ## Install:
-- add `"saifulferoz/dkron-php-adapter": "dev-master"` to your project `composer.json`
+- add `"gromo/dkron-php-adapter": "dev-master"` to your project `composer.json`
 - run `composer install`
 
 ## Use:
@@ -96,4 +97,4 @@ Method | Description | HTTP request
 
 ## Contribute
 
-Please refer to [CONTRIBUTING.md](https://github.com/saifulferoz/dkron-php-adapter/blob/master/CONTRIBUTING.md) for information.
+Please refer to [CONTRIBUTING.md](https://github.com/gromo/dkron-php-adapter/blob/master/CONTRIBUTING.md) for information.
