@@ -11,7 +11,7 @@ Adapter to communicate with [Dkron](https://dkron.io).
 Please read [Dkron API](https://dkron.io/usage/api/) for usage details
 
 ## Install:
-- add `"gromo/dkron-php-adapter": "dev-master"` to your project `composer.json`
+- add `"saifulferoz/dkron-php-adapter": "dev-master"` to your project `composer.json`
 - run `composer install`
 
 ## Use:
