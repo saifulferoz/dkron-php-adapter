@@ -96,4 +96,4 @@ Method | Description | HTTP request
 
 ## Contribute
 
-Please refer to [CONTRIBUTING.md](https://github.com/gromo/dkron-php-adapter/blob/master/CONTRIBUTING.md) for information.
+Please refer to [CONTRIBUTING.md](https://github.com/saifulferoz/dkron-php-adapter/blob/master/CONTRIBUTING.md) for information.
