@@ -1,11 +1,11 @@
 [![Build Status](https://travis-ci.com/gromo/dkron-php-adapter.svg?branch=master)](https://travis-ci.com/gromo/dkron-php-adapter)
-[![PHP](https://img.shields.io/badge/PHP-%5E7.0-blue.svg)](https://packagist.org/packages/gromo/dkron-php-adapter)
-[![Dkron version](https://img.shields.io/badge/Dkron-v0.10.0-green.svg)](https://github.com/victorcoder/dkron/releases/tag/v0.10.0)
+[![PHP](https://img.shields.io/badge/PHP-%5E8.0-blue.svg)](https://packagist.org/packages/gromo/dkron-php-adapter)
+[![Dkron version](https://img.shields.io/badge/Dkron-v3.1-green.svg)](https://github.com/victorcoder/dkron/releases/tag/v0.10.0)
 
 
 
 # Dkron PHP Adapter
-
+Inspired by gromo/dkron-php-adapter.Update api field and symfony and php version.
 Adapter to communicate with [Dkron](https://dkron.io).
 
 Please read [Dkron API](https://dkron.io/usage/api/) for usage details
