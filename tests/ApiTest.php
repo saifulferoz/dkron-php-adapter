@@ -18,6 +18,7 @@ use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -25,9 +26,9 @@ use stdClass;
 
 class ApiTest extends TestCase
 {
-    public function constructorDataProvider()
+    public static function constructorDataProvider(): array
     {
-        $defaults = $this->getHttpClient();
+        $defaults = self::getHttpClient();
         $defaults->client = null;
 
         return [
@@ -35,21 +36,21 @@ class ApiTest extends TestCase
                 'http' => $defaults,
             ],
             'success:endpointsAsString' => [
-                'http' => $this->getHttpClient(null, 'http://192.168.0.1:8080/')
+                'http' => self::getHttpClient(null, 'http://192.168.0.1:8080/'),
             ],
             'success:endpointsAsArray' => [
-                'http' => $this->getHttpClient(null, [
+                'http' => self::getHttpClient(null, [
                     'http://192.168.0.1:8080/',
                     'http://localhost/',
-                    'https://example.com/'
+                    'https://example.com/',
                 ]),
             ],
             'error:endpointsAsNumber' => [
-                'http' => $this->getHttpClient(null, 10),
+                'http' => self::getHttpClient(null, 10),
                 'exception' => InvalidArgumentException::class,
             ],
             'error:endpointsAsInvalidUrl' => [
-                'http' => $this->getHttpClient(null, 'test.com'),
+                'http' => self::getHttpClient(null, 'test.com'),
                 'exception' => InvalidArgumentException::class,
             ],
         ];
@@ -61,7 +62,8 @@ class ApiTest extends TestCase
      *
      * @dataProvider constructorDataProvider
      */
-    public function testConstructor($http, string $exception = null)
+    #[DataProvider('constructorDataProvider')]
+    public function testConstructor($http, ?string $exception = null): void
     {
         if ($exception) {
             $this->expectException($exception);
@@ -75,7 +77,7 @@ class ApiTest extends TestCase
     /**
      * Make sure all servers from the list were called
      */
-    public function testAllEndpointsCalled()
+    public function testAllEndpointsCalled(): void
     {
         $request = new Request('GET', '');
         $http = $this->getHttpClient([
@@ -85,7 +87,7 @@ class ApiTest extends TestCase
         ], [
             'http://192.168.0.1/',
             'http://192.168.0.2/',
-            'http://192.168.0.3/'
+            'http://192.168.0.3/',
         ]);
 
         $api = new Api($http->endpoints, $http->client);
@@ -100,7 +102,6 @@ class ApiTest extends TestCase
 
         $this->assertTrue($exceptionHandled);
         $this->assertCount(3, $http->transactions);
-
     }
 
     public function testMethodDeleteJob()
@@ -112,7 +113,7 @@ class ApiTest extends TestCase
         $api->deleteJob($jobName);
 
         $request = $this->getRequest($http);
-        $this->assertEquals('/v1/jobs/' . $jobName, $request->getUri()->getPath());
+        $this->assertEquals('/v1/jobs/'.$jobName, $request->getUri()->getPath());
         $this->assertEquals('DELETE', mb_strtoupper($request->getMethod()));
     }
 
@@ -129,7 +130,7 @@ class ApiTest extends TestCase
 
         // check request
         $request = $this->getRequest($http);
-        $this->assertEquals('/v1/jobs/' . $mockData['name'], $request->getUri()->getPath());
+        $this->assertEquals('/v1/jobs/'.$mockData['name'], $request->getUri()->getPath());
         $this->assertEquals('GET', mb_strtoupper($request->getMethod()));
 
         // check result
@@ -152,7 +153,7 @@ class ApiTest extends TestCase
 
         // check request
         $request = $this->getRequest($http);
-        $this->assertEquals('/v1/jobs/' . $jobName . '/executions', $request->getUri()->getPath());
+        $this->assertEquals('/v1/jobs/'.$jobName.'/executions', $request->getUri()->getPath());
         $this->assertEquals('GET', mb_strtoupper($request->getMethod()));
 
         // check result
@@ -259,7 +260,7 @@ class ApiTest extends TestCase
                 'dkron_rpc_addr' => '172.21.0.7:6868',
                 'dkron_server' => 'true',
                 'dkron_version' => '0.10.0',
-            ]
+            ],
         ];
         $http = $this->getHttpClient([$mockData]);
         $api = new Api($http->endpoints, $http->client);
@@ -351,7 +352,7 @@ class ApiTest extends TestCase
 
         // check request
         $request = $this->getRequest($http);
-        $this->assertEquals('/v1/jobs/' . $jobName, $request->getUri()->getPath());
+        $this->assertEquals('/v1/jobs/'.$jobName, $request->getUri()->getPath());
         $this->assertEquals('POST', mb_strtoupper($request->getMethod()));
     }
 
@@ -363,7 +364,7 @@ class ApiTest extends TestCase
             'executor' => 'shell',
             'executor_config' => [
                 'command' => 'ls -la /tmp',
-                'shell' => true
+                'shell' => true,
             ],
             'processors' => [
                 'log' => [
@@ -382,7 +383,10 @@ class ApiTest extends TestCase
         $this->assertEquals('/v1/jobs', $request->getUri()->getPath());
         $this->assertEquals('POST', mb_strtoupper($request->getMethod()));
         $requestData = json_decode($request->getBody()->__toString(), true);
-        $this->assertArraySubset($mockData, $requestData);
+        foreach ($mockData as $key => $value) {
+            $this->assertArrayHasKey($key, $requestData);
+            $this->assertEquals($value, $requestData[$key]);
+        }
     }
 
 
@@ -391,7 +395,7 @@ class ApiTest extends TestCase
      * @param mixed $endpoints
      * @return stdClass
      */
-    protected function getHttpClient(array $responses = null, $endpoints = 'http://127.0.0.1/'): stdClass
+    protected static function getHttpClient(?array $responses = null, $endpoints = 'http://127.0.0.1/'): stdClass
     {
         $output = new stdClass();
         $output->endpoints = $endpoints;
@@ -403,7 +407,7 @@ class ApiTest extends TestCase
         $responses = array_map(function ($response) {
             return ($response instanceof ResponseInterface) || ($response instanceof RequestException)
                 ? $response
-                : new Response(200, ['Content-Type: application/json'], json_encode($response));
+                : new Response(200, ['Content-Type' => 'application/json'], json_encode($response));
         }, $responses);
 
         $handler = HandlerStack::create(new MockHandler($responses));
@@ -416,9 +420,10 @@ class ApiTest extends TestCase
         return $output;
     }
 
-    protected function getRequest($http): RequestInterface
+    protected function getRequest(stdClass $http): RequestInterface
     {
         $this->assertCount(1, $http->transactions, 'Request is not available in transactions');
+
         return $http->transactions[0]['request'];
     }
 }

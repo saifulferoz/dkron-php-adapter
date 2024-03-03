@@ -5,11 +5,12 @@ namespace Dkron\Tests;
 use Dkron\Endpoints;
 use Dkron\Exception\DkronNoAvailableServersException;
 use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 class EndpointsTest extends TestCase
 {
-    public function constructorDataProvider()
+    public static function constructorDataProvider(): array
     {
         return [
             'success:endpointsAsString' => [
@@ -45,6 +46,7 @@ class EndpointsTest extends TestCase
      *
      * @dataProvider constructorDataProvider
      */
+    #[DataProvider('constructorDataProvider')]
     public function testConstructor($endpoints, string $exception = null)
     {
         if ($exception) {

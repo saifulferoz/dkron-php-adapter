@@ -3,6 +3,7 @@
 namespace Dkron\Tests\Models;
 
 use Dkron\Models\Job;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use stdClass;
 
@@ -90,6 +91,7 @@ class JobTest extends TestCase
      *
      * @dataProvider setConcurrencyDataProvider
      */
+    #[DataProvider('setConcurrencyDataProvider')]
     public function testSetConcurrency($value, $exception = null)
     {
         $job = new Job('name', 'schedule');
@@ -101,7 +103,7 @@ class JobTest extends TestCase
         $this->assertEquals($value, $job->getConcurrency());
     }
 
-    public function setConcurrencyDataProvider()
+    public static function setConcurrencyDataProvider(): array
     {
         return [
             'success:allow' => [

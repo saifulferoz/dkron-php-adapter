@@ -8,10 +8,10 @@ use InvalidArgumentException;
 class Endpoints
 {
     /** @var array */
-    private $endpoints = [];
+    private array $endpoints = [];
 
     /** @var int */
-    private $offset = 0;
+    private int $offset = 0;
 
     /**
      * @param string|array $endpoints
@@ -74,11 +74,10 @@ class Endpoints
         $availableEndpoints = array_values(array_filter($this->endpoints, function ($endpoint) {
             return $endpoint['available'];
         }));
-        $availableEndpointsAsStrings = array_map(function ($endpoint) {
+
+        return array_map(function ($endpoint) {
             return $endpoint['url'];
         }, $availableEndpoints);
-
-        return $availableEndpointsAsStrings;
     }
 
     /**
@@ -101,6 +100,7 @@ class Endpoints
                 return true;
             }
         }
+
         return false;
     }
 
@@ -116,6 +116,7 @@ class Endpoints
                 return $endpoint['available'];
             }
         }
+
         return false;
     }
 
@@ -123,16 +124,17 @@ class Endpoints
      * @param string $endpoint
      * @throws InvalidArgumentException
      */
-    public function setEndpointAsUnavailable(string $endpoint)
+    public function setEndpointAsUnavailable(string $endpoint): void
     {
         $url = $this->sanitize($endpoint);
         foreach ($this->endpoints as $i => $endpoint) {
             if ($endpoint['url'] === $url) {
                 $this->endpoints[$i]['available'] = false;
+
                 return;
             }
         }
-        throw new InvalidArgumentException('Endpoint ' . $endpoint . ' not found');
+        throw new InvalidArgumentException('Endpoint '.$endpoint.' not found');
     }
 
     /**
@@ -143,12 +145,12 @@ class Endpoints
     protected function sanitize(string $endpoint): string
     {
         if (filter_var($endpoint, FILTER_VALIDATE_URL) === false) {
-            throw new InvalidArgumentException('Endpoint ' . $endpoint . ' has to be a valid URL');
+            throw new InvalidArgumentException('Endpoint '.$endpoint.' has to be a valid URL');
         }
         $url = parse_url($endpoint);
-        $endpoint = $url['scheme'] . '://' . $url['host'];
+        $endpoint = $url['scheme'].'://'.$url['host'];
         if (isset($url['port'])) {
-            $endpoint .= ':' . $url['port'];
+            $endpoint .= ':'.$url['port'];
         }
 
         return strtolower($endpoint);

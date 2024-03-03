@@ -29,7 +29,7 @@ class Api
     private $endpoints;
 
     /** @var ClientInterface */
-    private $httpClient;
+    private ClientInterface $httpClient;
 
     /**
      * Api constructor.
