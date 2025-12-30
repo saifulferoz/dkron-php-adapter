@@ -37,7 +37,7 @@ class Api
      * @param ClientInterface $httpClient
      * @throws InvalidArgumentException
      */
-    public function __construct($endpoints, ClientInterface $httpClient = null)
+    public function __construct($endpoints, ?ClientInterface $httpClient = null)
     {
         if (!($endpoints instanceof Endpoints)) {
             $endpoints = new Endpoints($endpoints);

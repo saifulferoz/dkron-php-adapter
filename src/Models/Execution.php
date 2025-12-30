@@ -32,12 +32,12 @@ class Execution implements \JsonSerializable
      * @param string $nodeName
      */
     public function __construct(
-        string $jobName = null,
-        string $startedAt = null,
-        string $finishedAt = null,
-        bool $success = null,
-        string $output = null,
-        string $nodeName = null
+        ?string $jobName = null,
+        ?string $startedAt = null,
+        ?string $finishedAt = null,
+        ?bool $success = null,
+        ?string $output = null,
+        ?string $nodeName = null
     ) {
         $this->jobName = $jobName;
         $this->startedAt = $startedAt;

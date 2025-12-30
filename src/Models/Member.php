@@ -53,17 +53,17 @@ class Member implements \JsonSerializable
      * @param int $delegateCur
      */
     public function __construct(
-        string $name = null,
-        string $addr = null,
-        int $port = null,
-        array $tags = null,
-        int $status = null,
-        int $protocolMin = null,
-        int $protocolMax = null,
-        int $protocolCur = null,
-        int $delegateMin = null,
-        int $delegateMax = null,
-        int $delegateCur = null
+        ?string $name = null,
+        ?string $addr = null,
+        ?int $port = null,
+        ?array $tags = null,
+        ?int $status = null,
+        ?int $protocolMin = null,
+        ?int $protocolMax = null,
+        ?int $protocolCur = null,
+        ?int $delegateMin = null,
+        ?int $delegateMax = null,
+        ?int $delegateCur = null
     ) {
         $this->name = $name;
         $this->addr = $addr;

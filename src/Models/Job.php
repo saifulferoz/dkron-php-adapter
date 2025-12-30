@@ -88,10 +88,10 @@ class Job implements \JsonSerializable
     public function __construct(
         string $name,
         string $schedule,
-        int $errorCount = null,
-        string $lastError = null,
-        string $lastSuccess = null,
-        int $successCount = null
+        ?int $errorCount = null,
+        ?string $lastError = null,
+        ?string $lastSuccess = null,
+        ?int $successCount = null
     ) {
         $this->name = $name;
         $this->setSchedule($schedule);
