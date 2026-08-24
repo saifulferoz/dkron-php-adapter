@@ -1,7 +1,7 @@
 # Dkron PHP Adapter & Symfony Bundle
 
 [![CI](https://github.com/saifulferoz/dkron-php-adapter/actions/workflows/ci.yml/badge.svg)](https://github.com/saifulferoz/dkron-php-adapter/actions/workflows/ci.yml)
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/gromo/dkron-php-adapter.svg)](https://packagist.org/packages/gromo/dkron-php-adapter)
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/saifulferoz/dkron-php-adapter.svg)](https://packagist.org/packages/saifulferoz/dkron-php-adapter)
 [![PHP Version](https://img.shields.io/badge/PHP-%5E8.2-777bb4.svg)](https://www.php.net/)
 [![Symfony](https://img.shields.io/badge/Symfony-%5E7.4%20%7C%7C%20%5E8.0-black.svg)](https://symfony.com/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE.md)
@@ -33,7 +33,7 @@ A modern PHP SDK and **Symfony 7.4+ / 8.x Bundle** for interacting with [Dkron](
 Install via [Composer](https://getcomposer.org/):
 
 ```bash
-composer require gromo/dkron-php-adapter
+composer require saifulferoz/dkron-php-adapter
 ```
 
 ---
@@ -291,6 +291,12 @@ composer test
 # or
 ./vendor/bin/phpunit
 ```
+
+---
+
+## Acknowledgments & Credits
+
+This project is a modernized and actively maintained fork of the original [`gromo/dkron-php-adapter`](https://github.com/gromo/dkron-php-adapter) created by Jumia and its contributors. It has been rewritten to support modern PHP 8.2+, Symfony 7.4+ and 8.x, and the latest Dkron distributed cron API.
 
 ---
 
