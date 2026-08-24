@@ -1,24 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Dkron\Models;
 
-class Status implements \JsonSerializable
+use JsonSerializable;
+
+class Status implements JsonSerializable
 {
-    /** @var array */
-    private $agent;
+    private ?array $agent;
+    private ?array $serf;
+    private ?array $tags;
 
-    /** @var array */
-    private $serf;
-
-    /** @var array */
-    private $tags;
-
-    /**
-     * Status constructor.
-     * @param array $agent
-     * @param array $serf
-     * @param array $tags
-     */
     public function __construct(
         ?array $agent = null,
         ?array $serf = null,
@@ -29,50 +22,36 @@ class Status implements \JsonSerializable
         $this->tags = $tags;
     }
 
-    /**
-     * @return array
-     */
-    public function getAgent(): array
+    public static function createFromArray(array $data): self
+    {
+        return new self(
+            isset($data['agent']) ? (array)$data['agent'] : null,
+            isset($data['serf']) ? (array)$data['serf'] : null,
+            isset($data['tags']) ? (array)$data['tags'] : null
+        );
+    }
+
+    public function getAgent(): ?array
     {
         return $this->agent;
     }
 
-    /**
-     * @return array
-     */
-    public function getSerf(): array
+    public function getSerf(): ?array
     {
         return $this->serf;
     }
 
-    /**
-     * @return array
-     */
-    public function getTags(): array
+    public function getTags(): ?array
     {
         return $this->tags;
     }
 
-
-    public function jsonSerialize()
+    public function jsonSerialize(): array
     {
         return [
             'agent' => $this->agent,
             'serf' => $this->serf,
             'tags' => $this->tags,
         ];
-    }
-
-    /**
-     * @param array $data
-     * @return Status
-     */
-    public static function createFromArray(array $data): self
-    {
-        return new static(
-            $data['agent'] ?? null,
-            $data['serf'] ?? null,
-            $data['tags'] ?? null
-        );
     }
 }

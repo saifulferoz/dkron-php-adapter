@@ -1,219 +1,390 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Dkron;
 
-use Dkron\Exception\{
-    DkronException, DkronResponseException, DkronNoAvailableServersException
-};
-use Dkron\Models\{
-    Execution, Job, Member, Status
-};
+use Dkron\Exception\DkronException;
+use Dkron\Exception\DkronNoAvailableServersException;
+use Dkron\Exception\DkronResponseException;
+use Dkron\Models\Execution;
+use Dkron\Models\Job;
+use Dkron\Models\Member;
+use Dkron\Models\Status;
 use GuzzleHttp\Client;
 use GuzzleHttp\ClientInterface;
-use GuzzleHttp\Exception\{
-    ConnectException, GuzzleException
-};
+use GuzzleHttp\Exception\ConnectException;
+use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Psr7\Response;
 use InvalidArgumentException;
+use JsonException;
+use Psr\Http\Message\ResponseInterface;
 
 class Api
 {
-    const METHOD_DELETE = 'DELETE';
-    const METHOD_GET = 'GET';
-    const METHOD_POST = 'POST';
-    const METHOD_PUT = 'PUT';
-    const TIMEOUT = 10;
-    const URL_PREFIX = '/v1/';
+    public const METHOD_DELETE = 'DELETE';
+    public const METHOD_GET = 'GET';
+    public const METHOD_POST = 'POST';
+    public const METHOD_PUT = 'PUT';
+    public const METHOD_PATCH = 'PATCH';
+    public const TIMEOUT = 10.0;
+    public const URL_PREFIX = '/v1/';
 
-    /** @var Endpoints */
-    private $endpoints;
-
-    /** @var ClientInterface */
+    private Endpoints $endpoints;
     private ClientInterface $httpClient;
+    private array $defaultHeaders;
 
     /**
-     * Api constructor.
-     * @param string|array|Endpoints $endpoints
-     * @param ClientInterface $httpClient
+     * @param string|array<int, string>|Endpoints $endpoints
+     * @param array<string, string> $defaultHeaders
      * @throws InvalidArgumentException
      */
-    public function __construct($endpoints, ?ClientInterface $httpClient = null)
-    {
+    public function __construct(
+        string|array|Endpoints $endpoints,
+        ?ClientInterface $httpClient = null,
+        array $defaultHeaders = [],
+        float $timeout = self::TIMEOUT
+    ) {
         if (!($endpoints instanceof Endpoints)) {
             $endpoints = new Endpoints($endpoints);
         }
         $this->endpoints = $endpoints;
 
-        if (is_null($httpClient)) {
+        if ($httpClient === null) {
             $httpClient = new Client([
-                'timeout' => self::TIMEOUT,
+                'timeout' => $timeout,
+                'headers' => array_merge([
+                    'Accept' => 'application/json',
+                    'Content-Type' => 'application/json',
+                ], $defaultHeaders),
             ]);
         }
         $this->httpClient = $httpClient;
+        $this->defaultHeaders = $defaultHeaders;
+    }
+
+    public function getEndpoints(): Endpoints
+    {
+        return $this->endpoints;
+    }
+
+    public function getHttpClient(): ClientInterface
+    {
+        return $this->httpClient;
     }
 
     /**
-     * @param string $name
+     * Get system status
+     *
      * @throws DkronException
      */
-    public function deleteJob($name)
+    public function getStatus(): Status
     {
-        $this->request('/jobs/' . $name, self::METHOD_DELETE);
+        $data = $this->request('/', self::METHOD_GET);
+
+        return Status::createFromArray(is_array($data) ? $data : []);
     }
 
     /**
-     * @param string $name
-     * @return Job
+     * Check if the node / cluster is busy
+     *
      * @throws DkronException
      */
-    public function getJob(string $name): Job
+    public function isBusy(): bool
     {
-        return Job::createFromArray($this->request('/jobs/' . $name));
-    }
-
-    /**
-     * @param $name
-     * @return Execution[]
-     * @throws DkronException
-     */
-    public function getJobExecutions($name): array
-    {
-        $executions = [];
-        $responseData = $this->request('/jobs/' . $name . '/executions');
-        foreach ($responseData as $executionData) {
-            $executions[] = Execution::createFromArray($executionData);
+        try {
+            $data = $this->request('/busy', self::METHOD_GET);
+            return is_array($data) && !empty($data);
+        } catch (DkronException) {
+            return false;
         }
-
-        return $executions;
     }
 
     /**
-     * @return Job[]
-     * @throws DkronException
-     */
-    public function getJobs(): array
-    {
-        $jobs = [];
-        $responseData = $this->request('/jobs');
-        foreach ($responseData as $jobData) {
-            $jobs[] = Job::createFromArray($jobData);
-        }
-
-        return $jobs;
-    }
-
-    /**
-     * @return Member
+     * Get the current cluster leader
+     *
      * @throws DkronException
      */
     public function getLeader(): Member
     {
-        return Member::createFromArray($this->request('/leader'));
+        $data = $this->request('/leader', self::METHOD_GET);
+
+        return Member::createFromArray(is_array($data) ? $data : []);
     }
 
     /**
+     * Get all cluster members
+     *
      * @return Member[]
      * @throws DkronException
      */
     public function getMembers(): array
     {
         $members = [];
-        $responseData = $this->request('/members');
-        foreach ($responseData as $memberData) {
-            $members[] = Member::createFromArray($memberData);
+        $responseData = $this->request('/members', self::METHOD_GET);
+
+        if (is_array($responseData)) {
+            foreach ($responseData as $memberData) {
+                if (is_array($memberData)) {
+                    $members[] = Member::createFromArray($memberData);
+                }
+            }
         }
 
         return $members;
     }
 
     /**
-     * @return Status
-     * @throws DkronException
-     */
-    public function getStatus(): Status
-    {
-        return Status::createFromArray($this->request('/'));
-    }
-
-    /**
-     * @param string $endpoint
+     * Force a node to leave the cluster
+     *
      * @return Member[]
      * @throws DkronException
      */
-    public function leave(string $endpoint = null): array
+    public function leave(?string $endpoint = null): array
     {
-        if (is_null($endpoint) && $this->endpoints->getSize() === 1) {
+        if ($endpoint === null && $this->endpoints->getSize() === 1) {
             $endpoint = $this->endpoints->getAvailableEndpoint();
         }
-        if (is_null($endpoint)) {
-            throw new InvalidArgumentException('Parameter endpoint has to be set');
+
+        if ($endpoint === null) {
+            throw new InvalidArgumentException('Parameter endpoint has to be set when multiple endpoints are configured');
         }
 
         $members = [];
         $responseData = $this->request('/leave', self::METHOD_GET, null, $endpoint);
-        foreach ($responseData as $memberData) {
-            $members[] = Member::createFromArray($memberData);
+
+        if (is_array($responseData)) {
+            foreach ($responseData as $memberData) {
+                if (is_array($memberData)) {
+                    $members[] = Member::createFromArray($memberData);
+                }
+            }
         }
 
         return $members;
     }
 
     /**
-     * @param string $name
+     * List all jobs (with optional query filters such as metadata)
+     *
+     * @param array<string, mixed> $query
+     * @return Job[]
      * @throws DkronException
      */
-    public function runJob($name)
+    public function getJobs(array $query = []): array
     {
-        $this->request('/jobs/' . $name, self::METHOD_POST);
+        $jobs = [];
+        $path = '/jobs';
+        if (!empty($query)) {
+            $path .= '?' . http_build_query($query);
+        }
+
+        $responseData = $this->request($path, self::METHOD_GET);
+
+        if (is_array($responseData)) {
+            foreach ($responseData as $jobData) {
+                if (is_array($jobData)) {
+                    $jobs[] = Job::createFromArray($jobData);
+                }
+            }
+        }
+
+        return $jobs;
     }
 
     /**
-     * @param Job $job
+     * Get a single job by name
+     *
      * @throws DkronException
      */
-    public function saveJob(Job $job)
+    public function getJob(string $name): Job
     {
-        $this->request('/jobs', self::METHOD_POST, $job->getDataToSubmit());
+        $data = $this->request('/jobs/' . rawurlencode($name), self::METHOD_GET);
+
+        return Job::createFromArray(is_array($data) ? $data : []);
     }
 
     /**
-     * @param string $url
-     * @param string $method
-     * @param mixed $data
-     * @param array|string|Endpoints $endpoints
-     * @return array|null
+     * Create or update a job
+     *
      * @throws DkronException
      */
-    protected function request($url, $method = self::METHOD_GET, $data = null, $endpoints = null)
+    public function saveJob(Job $job): Job
     {
-        if (is_null($endpoints)) {
+        $data = $this->request('/jobs', self::METHOD_POST, $job->getDataToSubmit());
+
+        return is_array($data) ? Job::createFromArray($data) : $job;
+    }
+
+    /**
+     * Alias for saveJob
+     *
+     * @throws DkronException
+     */
+    public function createJob(Job $job): Job
+    {
+        return $this->saveJob($job);
+    }
+
+    /**
+     * Delete a job by name
+     *
+     * @throws DkronException
+     */
+    public function deleteJob(string $name): ?Job
+    {
+        $data = $this->request('/jobs/' . rawurlencode($name), self::METHOD_DELETE);
+
+        return is_array($data) ? Job::createFromArray($data) : null;
+    }
+
+    /**
+     * Manually trigger/run a job
+     *
+     * @throws DkronException
+     */
+    public function runJob(string $name): ?Execution
+    {
+        $data = $this->request('/jobs/' . rawurlencode($name), self::METHOD_POST);
+
+        return is_array($data) ? Execution::createFromArray($data) : null;
+    }
+
+    /**
+     * Toggle a job (enable / disable)
+     *
+     * @throws DkronException
+     */
+    public function toggleJob(string $name): Job
+    {
+        $data = $this->request('/jobs/' . rawurlencode($name) . '/toggle', self::METHOD_POST);
+
+        return Job::createFromArray(is_array($data) ? $data : []);
+    }
+
+    /**
+     * Get execution history for a job
+     *
+     * @return Execution[]
+     * @throws DkronException
+     */
+    public function getJobExecutions(string $name): array
+    {
+        $executions = [];
+        $responseData = $this->request('/jobs/' . rawurlencode($name) . '/executions', self::METHOD_GET);
+
+        if (is_array($responseData)) {
+            foreach ($responseData as $executionData) {
+                if (is_array($executionData)) {
+                    $executions[] = Execution::createFromArray($executionData);
+                }
+            }
+        }
+
+        return $executions;
+    }
+
+    /**
+     * Delete executions history for a job
+     *
+     * @return Execution[]
+     * @throws DkronException
+     */
+    public function deleteJobExecutions(string $name): array
+    {
+        $executions = [];
+        $responseData = $this->request('/jobs/' . rawurlencode($name) . '/executions', self::METHOD_DELETE);
+
+        if (is_array($responseData)) {
+            foreach ($responseData as $executionData) {
+                if (is_array($executionData)) {
+                    $executions[] = Execution::createFromArray($executionData);
+                }
+            }
+        }
+
+        return $executions;
+    }
+
+    /**
+     * Get all executions across the cluster
+     *
+     * @return Execution[]
+     * @throws DkronException
+     */
+    public function getAllExecutions(): array
+    {
+        $executions = [];
+        $responseData = $this->request('/executions', self::METHOD_GET);
+
+        if (is_array($responseData)) {
+            foreach ($responseData as $executionData) {
+                if (is_array($executionData)) {
+                    $executions[] = Execution::createFromArray($executionData);
+                }
+            }
+        }
+
+        return $executions;
+    }
+
+    /**
+     * Send HTTP request to available Dkron server
+     *
+     * @param string|array|Endpoints|null $endpoints
+     * @throws DkronException
+     */
+    protected function request(
+        string $url,
+        string $method = self::METHOD_GET,
+        mixed $data = null,
+        string|array|Endpoints|null $endpoints = null
+    ): mixed {
+        if ($endpoints === null) {
             $endpoints = $this->endpoints;
         }
+
         if (!($endpoints instanceof Endpoints)) {
             $endpoints = new Endpoints($endpoints);
         }
 
         while ($endpoint = $endpoints->getAvailableEndpoint()) {
             try {
-                /** @var Response $response */
-                $response = $this->httpClient->request($method, $endpoint . self::URL_PREFIX . ltrim($url, '/'), [
-                    'json' => $data,
-                ]);
-
-                $data = json_decode($response->getBody(), true);
-                if (JSON_ERROR_NONE !== json_last_error()) {
-                    throw new DkronResponseException('json_decode error: ' . json_last_error_msg());
+                $options = [];
+                if ($data !== null) {
+                    $options['json'] = $data;
+                }
+                if (!empty($this->defaultHeaders)) {
+                    $options['headers'] = $this->defaultHeaders;
                 }
 
-                return $data;
-            } catch (ConnectException $exception) {
-                $this->endpoints->setEndpointAsUnavailable($endpoint);
+                $fullUrl = $endpoint . self::URL_PREFIX . ltrim($url, '/');
+                $response = $this->httpClient->request($method, $fullUrl, $options);
+
+                $statusCode = $response->getStatusCode();
+                if ($statusCode === 204) {
+                    return [];
+                }
+
+                $body = (string)$response->getBody();
+                if ($body === '' || $body === 'null') {
+                    return [];
+                }
+
+                $decoded = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
+
+                return $decoded;
+            } catch (ConnectException) {
+                $endpoints->setEndpointAsUnavailable($endpoint);
+            } catch (JsonException $exception) {
+                throw new DkronResponseException('json_decode error: ' . $exception->getMessage(), $exception->getCode(), $exception);
             } catch (DkronException $exception) {
                 throw $exception;
             } catch (\Throwable $exception) {
-                throw new DkronException($exception->getMessage());
+                throw new DkronException($exception->getMessage(), (int)$exception->getCode(), $exception);
             }
         }
-    }
 
+        throw new DkronNoAvailableServersException();
+    }
 }

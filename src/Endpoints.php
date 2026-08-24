@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Dkron;
 
 use Dkron\Exception\DkronNoAvailableServersException;
@@ -7,37 +9,32 @@ use InvalidArgumentException;
 
 class Endpoints
 {
-    /** @var array */
+    /** @var array<int, array{available: bool, url: string}> */
     private array $endpoints = [];
 
-    /** @var int */
     private int $offset = 0;
 
     /**
-     * @param string|array $endpoints
+     * @param string|array<int, string> $endpoints
      * @throws InvalidArgumentException
      */
-    public function __construct($endpoints)
+    public function __construct(string|array $endpoints)
     {
-        if (!is_string($endpoints) && !is_array($endpoints)) {
-            throw new InvalidArgumentException('Parameter endpoints has to be string or array');
-        }
         if (is_string($endpoints)) {
             $endpoints = [$endpoints];
         }
+
         if (count($endpoints) === 0) {
             throw new InvalidArgumentException('Parameter endpoints cannot be empty');
         }
 
-        // remove duplicates
-        $endpoints = array_map(function ($endpoint) {
-            return $this->sanitize($endpoint);
-        }, $endpoints);
-        $endpoints = array_unique($endpoints);
+        // Sanitize and deduplicate
+        $sanitized = array_map(fn (string $endpoint) => $this->sanitize($endpoint), $endpoints);
+        $unique = array_values(array_unique($sanitized));
 
-        shuffle($endpoints);
+        shuffle($unique);
 
-        foreach ($endpoints as $endpoint) {
+        foreach ($unique as $endpoint) {
             $this->endpoints[] = [
                 'available' => true,
                 'url' => $endpoint,
@@ -46,7 +43,6 @@ class Endpoints
     }
 
     /**
-     * @return string
      * @throws DkronNoAvailableServersException
      */
     public function getAvailableEndpoint(): string
@@ -57,46 +53,40 @@ class Endpoints
         if ($length === 0) {
             throw new DkronNoAvailableServersException();
         }
+
         if ($this->offset >= $length) {
             $this->offset = 0;
         }
+
         $endpoint = $availableEndpoints[$this->offset];
-        $this->offset = $this->offset + 1;
+        $this->offset++;
 
         return $endpoint;
     }
 
     /**
-     * @return array[string]
+     * @return string[]
      */
     public function getAvailableEndpoints(): array
     {
-        $availableEndpoints = array_values(array_filter($this->endpoints, function ($endpoint) {
-            return $endpoint['available'];
-        }));
+        $available = array_values(array_filter(
+            $this->endpoints,
+            fn (array $endpoint) => $endpoint['available']
+        ));
 
-        return array_map(function ($endpoint) {
-            return $endpoint['url'];
-        }, $availableEndpoints);
+        return array_map(fn (array $endpoint) => $endpoint['url'], $available);
     }
 
-    /**
-     * @return int
-     */
     public function getSize(): int
     {
         return count($this->endpoints);
     }
 
-    /**
-     * @param string $endpoint
-     * @return bool
-     */
     public function hasEndpoint(string $endpoint): bool
     {
         $url = $this->sanitize($endpoint);
-        foreach ($this->endpoints as $i => $endpoint) {
-            if ($endpoint['url'] === $url) {
+        foreach ($this->endpoints as $item) {
+            if ($item['url'] === $url) {
                 return true;
             }
         }
@@ -104,16 +94,12 @@ class Endpoints
         return false;
     }
 
-    /**
-     * @param string $endpoint
-     * @return bool
-     */
     public function isEndpointAvailable(string $endpoint): bool
     {
         $url = $this->sanitize($endpoint);
-        foreach ($this->endpoints as $i => $endpoint) {
-            if ($endpoint['url'] === $url) {
-                return $endpoint['available'];
+        foreach ($this->endpoints as $item) {
+            if ($item['url'] === $url) {
+                return $item['available'];
             }
         }
 
@@ -121,38 +107,48 @@ class Endpoints
     }
 
     /**
-     * @param string $endpoint
      * @throws InvalidArgumentException
      */
     public function setEndpointAsUnavailable(string $endpoint): void
     {
         $url = $this->sanitize($endpoint);
-        foreach ($this->endpoints as $i => $endpoint) {
-            if ($endpoint['url'] === $url) {
+        foreach ($this->endpoints as $i => $item) {
+            if ($item['url'] === $url) {
                 $this->endpoints[$i]['available'] = false;
-
                 return;
             }
         }
-        throw new InvalidArgumentException('Endpoint '.$endpoint.' not found');
+
+        throw new InvalidArgumentException(sprintf('Endpoint %s not found', $endpoint));
+    }
+
+    public function reset(): void
+    {
+        foreach ($this->endpoints as $i => $item) {
+            $this->endpoints[$i]['available'] = true;
+        }
+        $this->offset = 0;
     }
 
     /**
-     * @param string $endpoint
-     * @return string
      * @throws InvalidArgumentException
      */
     protected function sanitize(string $endpoint): string
     {
         if (filter_var($endpoint, FILTER_VALIDATE_URL) === false) {
-            throw new InvalidArgumentException('Endpoint '.$endpoint.' has to be a valid URL');
-        }
-        $url = parse_url($endpoint);
-        $endpoint = $url['scheme'].'://'.$url['host'];
-        if (isset($url['port'])) {
-            $endpoint .= ':'.$url['port'];
+            throw new InvalidArgumentException(sprintf('Endpoint %s has to be a valid URL', $endpoint));
         }
 
-        return strtolower($endpoint);
+        $url = parse_url($endpoint);
+        if (!$url || !isset($url['scheme']) || !isset($url['host'])) {
+            throw new InvalidArgumentException(sprintf('Endpoint %s is not a valid URL structure', $endpoint));
+        }
+
+        $sanitized = $url['scheme'] . '://' . $url['host'];
+        if (isset($url['port'])) {
+            $sanitized .= ':' . $url['port'];
+        }
+
+        return strtolower($sanitized);
     }
 }

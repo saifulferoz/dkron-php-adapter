@@ -1,6 +1,16 @@
 {
   "name": "gromo/dkron-php-adapter",
-  "description": "Dkron PHP Adapter",
+  "description": "Dkron PHP Adapter and Symfony Bundle for Dkron distributed cron service",
+  "keywords": [
+    "dkron",
+    "cron",
+    "scheduler",
+    "symfony",
+    "bundle",
+    "adapter",
+    "client"
+  ],
+  "type": "symfony-bundle",
   "license": "MIT",
   "authors": [
     {
@@ -10,12 +20,25 @@
     }
   ],
   "require": {
-    "php": "^8.0",
+    "php": "^8.2",
     "guzzlehttp/guzzle": "^7.8.1",
-    "guzzlehttp/psr7": "^2.6.2"
+    "guzzlehttp/psr7": "^2.6.2",
+    "psr/http-client": "^1.0",
+    "psr/http-message": "^1.0 || ^2.0"
   },
   "require-dev": {
-    "phpunit/phpunit": "^11.0"
+    "phpunit/phpunit": "^11.0",
+    "symfony/config": "^7.4 || ^8.0",
+    "symfony/dependency-injection": "^7.4 || ^8.0",
+    "symfony/framework-bundle": "^7.4 || ^8.0",
+    "symfony/http-kernel": "^7.4 || ^8.0",
+    "symfony/yaml": "^7.4 || ^8.0"
+  },
+  "suggest": {
+    "symfony/config": "To configure via Symfony configuration tree (^7.4 || ^8.0)",
+    "symfony/dependency-injection": "To integrate with Symfony DI container (^7.4 || ^8.0)",
+    "symfony/http-kernel": "To use as a full Symfony Bundle (^7.4 || ^8.0)",
+    "symfony/yaml": "To load YAML configurations (^7.4 || ^8.0)"
   },
   "autoload": {
     "psr-4": {
@@ -29,5 +52,8 @@
   },
   "scripts": {
     "test": "./vendor/bin/phpunit"
+  },
+  "config": {
+    "sort-packages": true
   }
 }

@@ -1,43 +1,33 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Dkron\Models;
 
-class Execution implements \JsonSerializable
+use JsonSerializable;
+
+class Execution implements JsonSerializable
 {
-    /** @var string */
-    private $jobName;
+    private ?string $id;
+    private ?string $jobName;
+    private ?string $startedAt;
+    private ?string $finishedAt;
+    private ?bool $success;
+    private ?string $output;
+    private ?string $nodeName;
+    private ?int $group;
+    private ?int $attempt;
 
-    /** @var string */
-    private $startedAt;
-
-    /** @var string */
-    private $finishedAt;
-
-    /** @var bool */
-    private $success;
-
-    /** @var string */
-    private $output;
-
-    /** @var string */
-    private $nodeName;
-
-    /**
-     * Execution constructor.
-     * @param string $jobName
-     * @param string $startedAt
-     * @param string $finishedAt
-     * @param bool $success
-     * @param string $output
-     * @param string $nodeName
-     */
     public function __construct(
         ?string $jobName = null,
         ?string $startedAt = null,
         ?string $finishedAt = null,
         ?bool $success = null,
         ?string $output = null,
-        ?string $nodeName = null
+        ?string $nodeName = null,
+        ?string $id = null,
+        ?int $group = null,
+        ?int $attempt = null
     ) {
         $this->jobName = $jobName;
         $this->startedAt = $startedAt;
@@ -45,81 +35,83 @@ class Execution implements \JsonSerializable
         $this->success = $success;
         $this->output = $output;
         $this->nodeName = $nodeName;
+        $this->id = $id;
+        $this->group = $group;
+        $this->attempt = $attempt;
     }
 
-    /**
-     * @return string
-     */
-    public function getJobName(): string
+    public static function createFromArray(array $data): self
+    {
+        return new self(
+            isset($data['job_name']) ? (string)$data['job_name'] : null,
+            isset($data['started_at']) ? (string)$data['started_at'] : null,
+            isset($data['finished_at']) ? (string)$data['finished_at'] : null,
+            isset($data['success']) ? (bool)$data['success'] : null,
+            isset($data['output']) ? (string)$data['output'] : null,
+            isset($data['node_name']) ? (string)$data['node_name'] : null,
+            isset($data['id']) ? (string)$data['id'] : null,
+            isset($data['group']) ? (int)$data['group'] : null,
+            isset($data['attempt']) ? (int)$data['attempt'] : null
+        );
+    }
+
+    public function getId(): ?string
+    {
+        return $this->id;
+    }
+
+    public function getJobName(): ?string
     {
         return $this->jobName;
     }
 
-    /**
-     * @return string
-     */
-    public function getStartedAt(): string
+    public function getStartedAt(): ?string
     {
         return $this->startedAt;
     }
 
-    /**
-     * @return string
-     */
-    public function getFinishedAt(): string
+    public function getFinishedAt(): ?string
     {
         return $this->finishedAt;
     }
 
-    /**
-     * @return string
-     */
-    public function getOutput(): string
-    {
-        return $this->output;
-    }
-
-    /**
-     * @return string
-     */
-    public function getNodeName(): string
-    {
-        return $this->nodeName;
-    }
-
-    /**
-     * @return bool
-     */
-    public function isSuccess(): bool
+    public function isSuccess(): ?bool
     {
         return $this->success;
     }
 
-    public function jsonSerialize()
+    public function getOutput(): ?string
+    {
+        return $this->output;
+    }
+
+    public function getNodeName(): ?string
+    {
+        return $this->nodeName;
+    }
+
+    public function getGroup(): ?int
+    {
+        return $this->group;
+    }
+
+    public function getAttempt(): ?int
+    {
+        return $this->attempt;
+    }
+
+    public function jsonSerialize(): array
     {
         return [
+            'id' => $this->id,
             'job_name' => $this->jobName,
             'started_at' => $this->startedAt,
             'finished_at' => $this->finishedAt,
             'success' => $this->success,
             'output' => $this->output,
             'node_name' => $this->nodeName,
+            'group' => $this->group,
+            'attempt' => $this->attempt,
         ];
-    }
-
-    /**
-     * @param array $data
-     * @return Execution
-     */
-    public static function createFromArray(array $data): self
-    {
-        return new static(
-            $data['job_name'] ?? null,
-            $data['started_at'] ?? null,
-            $data['finished_at'] ?? null,
-            $data['success'] ?? null,
-            $data['output'] ?? null,
-            $data['node_name'] ?? null
-        );
     }
 }

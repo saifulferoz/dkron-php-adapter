@@ -3,4 +3,7 @@ composer.lock
 composer-test.lock
 vendor/
 .idea
+.DS_Store
 .DS_STORE
+.phpunit.result.cache
+.phpunit.cache/

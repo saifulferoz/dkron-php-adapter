@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Dkron\Tests;
 
 use Dkron\Endpoints;
@@ -25,44 +27,40 @@ class EndpointsTest extends TestCase
                     'http://localhost/test/1234?abc=123',
                 ],
             ],
-            'error:endpointsAsNumber' => [
-                'endpoints' => 10,
-                'exception' => InvalidArgumentException::class,
-            ],
             'error:endpointsAsInvalidUrl' => [
                 'endpoints' => 'test.com',
                 'exception' => InvalidArgumentException::class,
             ],
-            'error:endpointsAsArray' => [
+            'error:endpointsAsArrayWithInvalidUrl' => [
                 'endpoints' => ['http://192.168.0.1:8080', 'http://localhost', 'test.com'],
+                'exception' => InvalidArgumentException::class,
+            ],
+            'error:endpointsAsEmptyArray' => [
+                'endpoints' => [],
                 'exception' => InvalidArgumentException::class,
             ],
         ];
     }
 
-    /**
-     * @param mixed $endpoints
-     * @param string|null $exception
-     *
-     * @dataProvider constructorDataProvider
-     */
     #[DataProvider('constructorDataProvider')]
-    public function testConstructor($endpoints, string $exception = null)
+    public function testConstructor(mixed $endpoints, ?string $exception = null): void
     {
         if ($exception) {
             $this->expectException($exception);
         }
+
         $instance = new Endpoints($endpoints);
 
         if (!is_array($endpoints)) {
             $endpoints = [$endpoints];
         }
+
         foreach ($endpoints as $endpoint) {
             $this->assertTrue($instance->hasEndpoint($endpoint));
         }
     }
 
-    public function testMethodGetAvailableEndpoint()
+    public function testMethodGetAvailableEndpoint(): void
     {
         $endpoints = [
             'http://192.168.0.1/',
@@ -74,7 +72,7 @@ class EndpointsTest extends TestCase
         $availableEndpoints = [];
         for ($i = 0; $i < 9; $i++) {
             $availableEndpoint = $instance->getAvailableEndpoint();
-            if (!in_array($availableEndpoint, $availableEndpoints)) {
+            if (!in_array($availableEndpoint, $availableEndpoints, true)) {
                 $availableEndpoints[] = $availableEndpoint;
             } else {
                 $this->assertEquals($availableEndpoints[$i % 3], $availableEndpoint);
@@ -85,11 +83,12 @@ class EndpointsTest extends TestCase
         foreach ($endpoints as $endpoint) {
             $instance->setEndpointAsUnavailable($endpoint);
         }
+
         $this->expectException(DkronNoAvailableServersException::class);
         $instance->getAvailableEndpoint();
     }
 
-    public function testMethodGetAvailableEndpoints()
+    public function testMethodGetAvailableEndpoints(): void
     {
         $endpoints = [
             'http://192.168.0.1:8080/',
@@ -105,6 +104,7 @@ class EndpointsTest extends TestCase
             'http://localhost',
             'https://example.com',
         ];
+
         for ($i = 0; $i < 3; $i++) {
             $availableEndpoints = $instance->getAvailableEndpoints();
             sort($availableEndpoints);
@@ -117,7 +117,7 @@ class EndpointsTest extends TestCase
         $this->assertCount(0, $availableEndpoints);
     }
 
-    public function testBooleanEndpointMethods()
+    public function testBooleanEndpointMethods(): void
     {
         $endpoints = [
             'http://192.168.0.1/',
@@ -131,5 +131,21 @@ class EndpointsTest extends TestCase
             $instance->setEndpointAsUnavailable($endpoint);
             $this->assertFalse($instance->isEndpointAvailable($endpoint));
         }
+    }
+
+    public function testReset(): void
+    {
+        $endpoints = [
+            'http://192.168.0.1/',
+            'http://192.168.0.2/',
+        ];
+        $instance = new Endpoints($endpoints);
+
+        $instance->setEndpointAsUnavailable('http://192.168.0.1/');
+        $this->assertFalse($instance->isEndpointAvailable('http://192.168.0.1/'));
+
+        $instance->reset();
+        $this->assertTrue($instance->isEndpointAvailable('http://192.168.0.1/'));
+        $this->assertTrue($instance->isEndpointAvailable('http://192.168.0.2/'));
     }
 }
